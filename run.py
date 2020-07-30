@@ -37,36 +37,64 @@ class Logger:
         self.magenta = "\033[95m"
         self.blue = "\033[94m"
 
+        self.get_file_name = lambda: f"logs{back_slash}{datetime.now().strftime('%d-%m-%y')}.log"
+        self.get_file_name_chat = lambda: f"logs{back_slash}{datetime.now().strftime('%d-%m-%y')}-chat.log"
+        with open(self.get_file_name(), 'a') as f:
+            f.write(f"\n{'*' * 60}\n*{' ' * 25}STARTING{' ' * 25}*\n{'*' * 60}\n\n")
+
+    def write_message_log(self, ctx: commands.Context):
+        """Log the chat to a file."""
+        with open(self.get_file_name_chat(), 'a') as f:
+            f.write(
+                f"[{datetime.now().strftime('%H:%M:%S %d/%m/%y')}] {ctx.author} ({ctx.author.id}) in "
+                f"#{ctx.channel.name}: {ctx.message.content}\n")
+
+    def write_to_log(self, message: str) -> None:
+        """Print to the console and log to file!"""
+        print(message)  # Print the colored message
+
+        # Replace all the colors for clean file logging:
+        for code in ["\033[1m", "\033[8m", "\033[39m", "\033[92m", "\033[93m", "\033[96m", "\033[91m", "\033[95m",
+                     "\033[94m"]:
+            message = message.replace(code, '')
+        with open(self.get_file_name(), 'a') as f:
+            f.write(f"{message}\n")
+
     def generate_timestamp(self) -> str:
         """Generates a usable timestamp for the logger."""
         return f"[{self.green + datetime.now().strftime('%H:%M:%S %d/%m/%y') + self.default}]"
 
     def log(self, message: str) -> None:
         """Sends a popper formatted log message"""
-        print(f"{self.generate_timestamp()} {message}")
+        message = f"{self.generate_timestamp()} {message}"
+        self.write_to_log(message)
 
     def warn(self, message: str) -> None:
         """Logs a popper formatted warning/important message"""
-        print(f"[{self.magenta + self.bold}WARN{self.default + self.normal}]{self.generate_timestamp()} "
-              f"{self.magenta + message + self.default}")
+        message = f"[{self.magenta + self.bold}WARN{self.default + self.normal}]{self.generate_timestamp()} " \
+                  f"{self.magenta + message + self.default}"
+        self.write_to_log(message)
 
     def error(self, message: str) -> None:
         """Logs a popper formatted error message"""
-        print(f"[{self.red + self.bold}ERROR{self.default + self.normal}]{self.generate_timestamp()} "
-              f"{self.red + message + self.default}")
+        message = f"[{self.red + self.bold}ERROR{self.default + self.normal}]{self.generate_timestamp()} " \
+                  f"{self.red + message + self.default}"
+        self.write_to_log(message)
 
     def command_executed(self, ctx: commands.Context) -> None:
         """Logs it when a command got executed!"""
-        self.log(f"{self.bold + self.cyan + ctx.command.name + self.normal + self.default} "
-                 f"got executed by {self.yellow + ctx.author.name}#{ctx.author.discriminator + self.default} "
-                 f"({self.blue + str(ctx.author.id) + self.default})")
+        message = f"{self.bold + self.cyan + ctx.command.name + self.normal + self.default} " \
+                  f"got executed by {self.yellow + ctx.author.name}#{ctx.author.discriminator + self.default} " \
+                  f"({self.blue + str(ctx.author.id) + self.default})"
+        self.log(message)
 
     def guild_join_leave(self, member: discord.Member, join: bool = False) -> None:
         """Logs it when a member leaves or joins."""
-        self.log(f"{self.yellow + member.name}#{member.discriminator + self.default} "
-                 f"({self.blue + str(member.id) + self.default}) "
-                 f"{self.bold + self.cyan + ('joined' if join else 'left') + self.normal + self.default} "
-                 f"the Xiler discord!")
+        message = f"{self.yellow + member.name}#{member.discriminator + self.default} " \
+                  f"({self.blue + str(member.id) + self.default}) " \
+                  f"{self.bold + self.cyan + ('joined' if join else 'left') + self.normal + self.default} " \
+                  f"the Xiler discord!"
+        self.log(message)
 
 
 # Generate our usable logger object:
@@ -175,6 +203,8 @@ class TempBot(commands.Bot):
         ctx = await self.get_context(message)
         if ctx.valid:
             logger.command_executed(ctx)
+        elif ctx.guild.id == 696758091768791080:
+            logger.write_message_log(ctx)
         await self.process_commands(message)
 
     # Prevent unknown exception errors
