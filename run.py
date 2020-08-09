@@ -1,7 +1,3 @@
-#   ©Xiler - Arthurdw
-#   Xiler is under a CC0-1.0 License (View the license here: https://legal.xiler.net/license)
-#   By proceeding to this site you agree with our ToS. (View the tos here: https://legal.xiler.net/tos)
-
 from configparser import ConfigParser
 from datetime import datetime
 from os import name, system
@@ -20,8 +16,9 @@ cfg = ConfigParser()
 cfg.read("config.cfg")
 
 # Setup BeatPy
-setup = formatter.Embed(footer=True, footer_message=f"©Xiler | {datetime.now().year}")
+setup = formatter.Embed(footer=True, footer_message=f"\u00A9Xiler | {datetime.now().year}")
 em = setup.create
+field = formatter.Field
 
 
 # Our general logger:
@@ -163,9 +160,72 @@ class GeneralCommands(commands.Cog):
                      color=0xff0016, timestamp=False))
 
 
+# Handles/Manages the self roles
+class SelfRoles(commands.Cog):
+    def __init__(self, bot):
+        self.bot = bot
+        self.self_roles = 742135677289889793
+        self.msg_id = 742147732499857490
+        self.guild = 696758091768791080
+        self.data = {
+            "\U0001F514": {
+                "role": 742137786269827114,
+                "description": "Receive a ping on announcements."
+            },
+            "\U0001F916": {
+                "role": 742137593151357010,
+                "description": "Receive a ping when a dependency (library, API, ...) updates."
+            },
+            "\U0001F3AE": {
+                "role": 742137723015528488,
+                "description": "Receive a ping when/about our community servers update(s). "
+            },
+        }
+
+    @commands.Cog.listener()
+    async def on_ready(self):
+        self.guild = self.bot.get_guild(self.guild)
+        self.self_roles = self.guild.get_channel(self.self_roles)
+
+        for emoji in self.data:
+            self.data[emoji]["role"] = self.guild.get_role(self.data[emoji]["role"])
+
+        msg = await self.self_roles.send(
+            **em(title="Select your roles!",
+                 content="We have opted in for some special roles to classify our members.\n"
+                         "Clicking on the emoticon under this message you will apply the "
+                         "self-role! (if it doesn't show up reload your discord)\n",
+                 fields=[field("Roles", "\n".join(
+                     [f"{emoji} | {self.data[emoji]['role'].mention} -> {self.data[emoji]['description']}"
+                      for emoji in self.data]))],
+                 timestamp=False, color=0x1985a1))
+
+        self.msg_id = msg.id
+
+        for emoji in self.data:
+            await msg.add_reaction(emoji)
+
+    async def fix_reaction(self, payload: discord.RawReactionActionEvent):
+        if payload.message_id == self.msg_id:
+            if str(payload.emoji) in self.data.keys():
+                if payload.event_type == "REACTION_ADD":
+                    if payload.member.bot:
+                        return
+                    return await payload.member.add_roles(self.data[str(payload.emoji)]["role"])
+                return await self.guild.get_member(payload.user_id).remove_roles(self.data[str(payload.emoji)]["role"])
+
+    @commands.Cog.listener()
+    async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):
+        await self.fix_reaction(payload)
+
+    @commands.Cog.listener()
+    async def on_raw_reaction_remove(self, payload: discord.RawReactionActionEvent):
+        await self.fix_reaction(payload)
+
+
 # Setting up our bot object:
 class TempBot(commands.Bot):
-    cogs = [EventListener, GeneralCommands]
+    cogs = [EventListener, GeneralCommands, SelfRoles]
 
     def __init__(self):
         system(clear)
