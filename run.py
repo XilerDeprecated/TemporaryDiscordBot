@@ -153,7 +153,7 @@ class GeneralCommands(commands.Cog):
             msg = await self.suggestions.send(**em(suggestion,
                                                    footer_message=f"Submitted by {ctx.author} ({ctx.author.id})",
                                                    footer_icon=ctx.author.avatar_url))
-            for emoji in ["👍", "😐", "👎"]:
+            for emoji in ["\U0001f44d", "\U0001F610", "\U0001F44E"]:
                 await msg.add_reaction(emoji)
             await ctx.send(
                 **em(f"Successfully send your suggestion in {self.suggestions.mention}!\n``` {suggestion} ```",
@@ -165,7 +165,7 @@ class SelfRoles(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.self_roles = 742135677289889793
-        self.msg_id = 742147732499857490
+        self.msg_id = 742157802860052520
         self.guild = 696758091768791080
         self.data = {
             "\U0001F514": {
@@ -190,20 +190,20 @@ class SelfRoles(commands.Cog):
         for emoji in self.data:
             self.data[emoji]["role"] = self.guild.get_role(self.data[emoji]["role"])
 
-        msg = await self.self_roles.send(
-            **em(title="Select your roles!",
-                 content="We have opted in for some special roles to classify our members.\n"
-                         "Clicking on the emoticon under this message you will apply the "
-                         "self-role! (if it doesn't show up reload your discord)\n",
-                 fields=[field("Roles", "\n".join(
-                     [f"{emoji} | {self.data[emoji]['role'].mention} -> {self.data[emoji]['description']}"
-                      for emoji in self.data]))],
-                 timestamp=False, color=0x1985a1))
+        # msg = await self.self_roles.send(
+        #     **em(title="Select your roles!",
+        #          content="We have opted in for some special roles to classify our members.\n"
+        #                  "Clicking on the emoticon under this message you will apply the "
+        #                  "self-role! (if it doesn't show up reload your discord)\n",
+        #          fields=[field("Roles", "\n".join(
+        #              [f"{emoji} | {self.data[emoji]['role'].mention} -> {self.data[emoji]['description']}"
+        #               for emoji in self.data]))],
+        #          timestamp=False, color=0x1985a1))
 
-        self.msg_id = msg.id
-
-        for emoji in self.data:
-            await msg.add_reaction(emoji)
+        # self.msg_id = msg.id
+        #
+        # for emoji in self.data:
+        #     await msg.add_reaction(emoji)
 
     async def fix_reaction(self, payload: discord.RawReactionActionEvent):
         if payload.message_id == self.msg_id:
@@ -233,6 +233,7 @@ class TempBot(commands.Bot):
         super().__init__(command_prefix=commands.when_mentioned_or(cfg["GENERAL"].get("prefix")),
                          description="The temporary bot for Xiler",
                          case_insensitive=True,
+                         intents=discord.Intents.all(),
                          help_attrs=dict(hidden=True))
 
         # Add the COG's
